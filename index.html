@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>มาโพสมาา</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+        }
+        header {
+            background-color: #4267B2;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            position: relative;
+        }
+        header .admin-login {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background-color: #365899;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        main {
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+        .post {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            padding: 15px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .post h4 {
+            margin: 0;
+            font-size: 1.1em;
+            color: #555;
+        }
+        .post p {
+            margin: 10px 0;
+        }
+        .post button {
+            padding: 5px 10px;
+            background-color: #4267B2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        .post button:hover {
+            background-color: #365899;
+        }
+        .post .comments {
+            margin-top: 10px;
+        }
+        .post .comment {
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+        .post .comment input {
+            width: calc(100% - 22px);
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            padding: 5px;
+        }
+        .post .comment button {
+            padding: 5px;
+            background-color: #4267B2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        .post .comment button:hover {
+            background-color: #365899;
+        }
+        .new-post {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .new-post textarea {
+            width: 100%;
+            height: 100px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        .new-post button {
+            padding: 10px;
+            background-color: #4267B2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .new-post button:hover {
+            background-color: #365899;
+        }
+        .admin-panel {
+            display: none;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .admin-panel button {
+            padding: 10px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .admin-panel button:hover {
+            background-color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>โพสเลย</h1>
+        <button class="admin-login" onclick="showLogin()">Admin Login</button>
+    </header>
+    <main>
+        <div class="container">
+            <div class="admin-panel" id="admin-panel">
+                <h2>หน้าแอดจ่ะ</h2>
+                <button onclick="logout()">Logout</button>
+            </div>
+            <div class="new-post">
+                <h2>สร้างโพส</h2>
+                <textarea id="post-content" placeholder="What's on your mind?"></textarea>
+                <button onclick="createPost()">Post</button>
+            </div>
+            <div id="posts">
+                <!-- Posts will appear here -->
+            </div>
+        </div>
+    </main>
+    <script>
+        const postsContainer = document.getElementById('posts');
+        const adminPanel = document.getElementById('admin-panel');
+
+        // Load posts from localStorage
+        function loadPosts() {
+            const posts = JSON.parse(localStorage.getItem('posts')) || [];
+            postsContainer.innerHTML = posts.map(post => `
+                <div class="post" id="post-${post.id}">
+                    <h4>${post.user}</h4>
+                    <p>${post.content}</p>
+                    <button onclick="likePost(${post.id})">Like (${post.likes})</button>
+                    <button onclick="showCommentSection(${post.id})">Comment</button>
+                    <button onclick="pinPost(${post.id})">Pin</button>
+                    ${isAdmin() ? `<button onclick="deletePost(${post.id})">Delete</button>` : ''}
+                    <div class="comments" id="comments-${post.id}">
+                        ${post.comments.map(comment => `
+                            <div class="comment">
+                                <p>${comment}</p>
+                            </div>
+                        `).join('')}
+                        <div class="comment">
+                            <input type="text" id="comment-input-${post.id}" placeholder="Write a comment...">
+                            <button onclick="addComment(${post.id})">Add Comment</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Show login dialog for admin
+        function showLogin() {
+            const username = prompt('Enter admin username:');
+            const password = prompt('Enter admin password:');
+            if (username === 'admin' && password === 'admin') {
+                localStorage.setItem('isAdmin', 'true');
+                adminPanel.style.display = 'block';
+                loadPosts();
+            } else {
+                alert('Invalid credentials');
+            }
+        }
+
+        // Logout admin
+        function logout() {
+            localStorage.removeItem('isAdmin');
+            adminPanel.style.display = 'none';
+            loadPosts();
+        }
+
+        // Check if current user is admin
+        function isAdmin() {
+            return localStorage.getItem('isAdmin') === 'true';
+        }
+
+        // Create a new post
+        function createPost() {
+            const postContent = document.getElementById('post-content').value;
+            if (postContent.trim() === '') {
+                alert('Post content cannot be empty');
+                return;
+            }
+
+            const posts = JSON.parse(localStorage.getItem('posts')) || [];
+            const newPost = {
+                id: posts.length ? posts[posts.length - 1].id + 1 : 1,
+                user: 'User',
+                content: postContent,
+                likes: 0,
+                comments: [],
+                pinned: false
+            };
+
+            posts.push(newPost);
+            localStorage.setItem('posts', JSON.stringify(posts));
+            document.getElementById('post-content').value = '';
+            loadPosts();
+        }
+
+        // Like a post
+        function likePost(postId) {
+            const posts = JSON.parse(localStorage.getItem('posts')) || [];
+            const post = posts.find(p => p.id === postId);
+            if (post) {
+                post.likes += 1;
+                localStorage.setItem('posts', JSON.stringify(posts));
+                loadPosts();
+            }
+        }
+
+        // Show or hide comment section
+        function showCommentSection(postId) {
+            const commentSection = document.getElementById(`comments-${postId}`);
+            commentSection.style.display = commentSection.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // Add a comment to a post
+        function addComment(postId) {
+            const commentInput = document.getElementById(`comment-input-${postId}`);
+            const commentText = commentInput.value;
+            if (commentText.trim() === '') {
+                alert('Comment cannot be empty');
+                return;
+            }
+
+            const posts = JSON.parse(localStorage.getItem('posts')) || [];
+            const post = posts.find(p => p.id === postId);
+            if (post) {
+                post.comments.push(commentText);
+                localStorage.setItem('posts', JSON.stringify(posts));
+                commentInput.value = '';
+                loadPosts();
+            }
+        }
+
+        // Delete a post
+        function deletePost(postId) {
+            const posts = JSON.parse(localStorage.getItem('posts')) || [];
+            const filteredPosts = posts.filter(p => p.id !== postId);
+            localStorage.setItem('posts', JSON.stringify(filteredPosts));
+            loadPosts();
+        }
+
+        // Pin a post
+        function pinPost(postId) {
+            const posts = JSON.parse(localStorage.getItem('posts')) || [];
+            const post = posts.find(p => p.id === postId);
+            if (post) {
+                post.pinned = !post.pinned;
+                localStorage.setItem('posts', JSON.stringify(posts));
+                loadPosts();
+            }
+        }
+
+        // Initial load
+        loadPosts();
+    </script>
+</body>
+</html>
